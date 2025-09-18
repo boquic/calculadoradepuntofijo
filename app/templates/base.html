@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Calculadora de Punto Fijo (Web){% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="header">
+  <h1>Calculadora de Punto Fijo — Web</h1>
+</header>
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+<script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

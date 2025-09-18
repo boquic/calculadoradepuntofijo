@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Calculadora de Punto Fijo (Web){% endblock %}
+
+{% block content %}
+
+  {% for m in messages %}
+    <div class="status {{ m.kind }}">{{ m.text|safe }}</div>
+  {% endfor %}
+
+  <form method="post" class="card">
+    <div class="row">
+      <div>
+        <label>Ecuación f(x) = 0</label>
+        <input type="text" name="fx" value="{{ fx_text }}" placeholder="Ej: cos(x) - x  ó  cos(x) = x">
+        <div class="help">Funciones: sin, cos, tan, exp, log, sqrt, Abs | Constantes: pi, E | Multiplicación implícita: 2x, 3(x+1) | ^ o ** para potencia.</div>
+      </div>
+      <div>
+        <label>g(x) (opcional)</label>
+        <input type="text" name="gx" value="{{ gx_text }}" placeholder="Ej: cos(x) ó x - 0.7*(cos(x)-x)">
+        <div class="help">Si dejas vacío, se intentará sugerir/usar una g(x) automáticamente.</div>
+      </div>
+    </div>
+
+    <div class="row-3" style="margin-top:12px;">
+      <div>
+        <label>x0</label>
+        <input type="text" name="x0" value="{{ x0_text }}">
+      </div>
+      <div>
+        <label>Tolerancia</label>
+        <input type="text" name="tol" value="{{ tol_text }}">
+        <div class="help">Usa 0 o deja vacío para ignorar tolerancia y usar solo iteraciones.</div>
+      </div>
+      <div>
+        <label>Iteraciones máximas</label>
+        <input type="text" name="max_it" value="{{ max_it_text }}">
+      </div>
+    </div>
+
+    <div class="flex" style="margin-top:12px;">
+      <div>
+        <label>Tipo de error</label>
+        <select name="error_tipo">
+          <option value="Absoluto" {% if error_tipo == "Absoluto" %}selected{% endif %}>Absoluto</option>
+          <option value="Relativo" {% if error_tipo == "Relativo" %}selected{% endif %}>Relativo</option>
+        </select>
+      </div>
+      <div class="pill">g(x) usada: <span class="muted"> {{ g_used }} </span></div>
+      <div class="pill">g'(x0): <span class="muted"> {{ gprime_info }} </span></div>
+    </div>
+
+    <div class="btns" style="margin-top:12px;">
+      <button type="submit" name="action" value="suggest" class="warn">Sugerir g(x)</button>
+      <button type="submit" name="action" value="calculate" class="primary">Calcular</button>
+      <button type="submit" name="action" value="clear" class="danger">Limpiar</button>
+      <button type="button" id="toggleKb">Teclado</button>
+    </div>
+
+    <div id="kb" class="card kb-hidden" style="margin-top:12px;">
+      <div class="kbd">
+        <button type="button" data-ins="x">x</button>
+        <button type="button" data-ins="(">(</button>
+        <button type="button" data-ins=")">)</button>
+        <button type="button" data-ins="+">+</button>
+        <button type="button" data-ins="-">-</button>
+        <button type="button" data-ins="*">*</button>
+        <button type="button" data-ins="/">/</button>
+        <button type="button" data-ins="^">^</button>
+        <button type="button" data-ins="=">=</button>
+
+        <button type="button" data-ins="sin(">sin(</button>
+        <button type="button" data-ins="cos(">cos(</button>
+        <button type="button" data-ins="tan(">tan(</button>
+        <button type="button" data-ins="exp(">exp(</button>
+        <button type="button" data-ins="log(">log(</button>
+        <button type="button" data-ins="sqrt(">sqrt(</button>
+        <button type="button" data-ins="Abs(">Abs(</button>
+        <button type="button" data-ins="pi">pi</button>
+        <button type="button" data-ins="E">E</button>
+
+        <button type="button" data-ins="0">0</button>
+        <button type="button" data-ins="1">1</button>
+        <button type="button" data-ins="2">2</button>
+        <button type="button" data-ins="3">3</button>
+        <button type="button" data-ins="4">4</button>
+        <button type="button" data-ins="5">5</button>
+        <button type="button" data-ins="6">6</button>
+        <button type="button" data-ins="7">7</button>
+        <button type="button" data-ins="8">8</button>
+        <button type="button" data-ins="9">9</button>
+
+        <button type="button" id="backspace">←</button>
+        <button type="button" id="clearFx">Borrar f(x)</button>
+        <button type="button" id="clearGx">Borrar g(x)</button>
+      </div>
+      <small class="muted">El teclado inserta en el campo enfocado (f o g).</small>
+    </div>
+  </form>
+
+  <div class="card">
+    <h3 style="margin-top:0; margin-bottom:10px;">Resultados de iteración</h3>
+    {% if rows %}
+      <div style="overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Iteración</th>
+              <th>x_n</th>
+              <th>g(x_n)</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in rows %}
+              <tr>
+                <td>{{ r["n"] }}</td>
+                <td>{{ r["xn"] }}</td>
+                <td>{{ r["gxn"] }}</td>
+                <td>{{ r["err"] }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="help">Completa los campos y pulsa “Calcular” para ver la tabla.</div>
+    {% endif %}
+  </div>
+
+  <div class="card summary">
+    <div><b>Resumen:</b> {{ summary }}</div>
+  </div>
+
+  <div class="help">
+    Consejos:
+    - Si la sugerencia automática no converge, intenta escribir g(x) manualmente (por ejemplo, para cos(x)-x=0, usa g(x)=cos(x)).
+    - Cambiar x0 puede ayudar a la convergencia. Se advierte si |g’(x0)| ≥ 1.
+  </div>
+
+{% endblock %}
